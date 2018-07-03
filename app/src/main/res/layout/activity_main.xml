@@ -37,4 +37,42 @@
         android:text="升级"
         android:onClick="update"
         />
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:gravity="center"
+        android:text="创建V001数据库和表数据"
+        android:onClick="createV001"
+        />
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:gravity="center"
+        android:text="创建V002数据库和表数据"
+        android:onClick="createV002"
+        />
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:gravity="center"
+        android:text="V001升级到V002"
+        android:onClick="update1to2"
+        />
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:gravity="center"
+        android:text="V001升级到V003"
+        android:onClick="update1to3"
+        />
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:gravity="center"
+        android:text="V002升级到V003"
+        android:onClick="update2to3"
+        />
 </LinearLayout>

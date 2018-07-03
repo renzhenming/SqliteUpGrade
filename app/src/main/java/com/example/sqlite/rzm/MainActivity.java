@@ -7,15 +7,18 @@ import android.widget.TextView;
 
 import com.example.sqlite.rzm.db.BaseDaoFactory;
 import com.example.sqlite.rzm.update.UpdateManager;
+import com.example.sqlite.rzm.versionV001.UserDao;
+import com.example.sqlite.rzm.versionV001.User;
+import com.example.sqlite.rzm.versionV001.PhotoDao;
+import com.example.sqlite.rzm.versionV001.Photo;
 
 import java.util.Date;
 
 public class MainActivity extends AppCompatActivity {
     public static final String url = "http://v.juhe.cn/toutiao/index?type=top&key=29da5e8be9ba88b932394b7261092f71";
-    private static final String TAG = "dongnao";
     TextView textView;
     UpdateManager updateManager;
-    UserDao baseDao;
+
     int i = 0;
 
     @Override
@@ -24,7 +27,67 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         textView = (TextView) findViewById(R.id.content);
         updateManager = new UpdateManager();
-        baseDao = BaseDaoFactory.getInstance().getDataHelper(UserDao.class, User.class);
+
+    }
+
+    public void createV001(View view) {
+        UserDao userDaoV001 = BaseDaoFactory.getInstance().getDataHelper
+                (UserDao.class, User.class);
+
+        for (int i1 = 0; i1 < 10; i1++) {
+            User user = new User();
+            user.setName("张三-----V001" + (i++));
+            user.setPassword("123456");
+            userDaoV001.insert(user);
+        }
+
+
+        PhotoDao photoDaoV001 = BaseDaoFactory.getInstance().getDataHelper
+                (PhotoDao.class,Photo.class);
+
+        for (int i1 = 0; i1 < 10; i1++) {
+            Photo photo = new Photo();
+            photo.setPath("data/data/my.jpg-----V001");
+            photoDaoV001.insert(photo);
+        }
+    }
+
+
+    public void createV002(View view) {
+        com.example.sqlite.rzm.versionV002.UserDao userDaoV002 = BaseDaoFactory.getInstance().getDataHelper
+                (com.example.sqlite.rzm.versionV002.UserDao.class, com.example.sqlite.rzm.versionV002.User.class);
+
+        for (int i1 = 0; i1 < 10; i1++) {
+            com.example.sqlite.rzm.versionV002.User user = new com.example.sqlite.rzm.versionV002.User();
+            user.setName("李四-----V002" + (i++));
+            user.setPassword("123456");
+            userDaoV002.insert(user);
+        }
+
+
+        com.example.sqlite.rzm.versionV002.PhotoDao photoDaoV002 = BaseDaoFactory.getInstance().getDataHelper
+                (com.example.sqlite.rzm.versionV002.PhotoDao.class, com.example.sqlite.rzm.versionV002.Photo.class);
+
+        for (int i1 = 0; i1 < 10; i1++) {
+            com.example.sqlite.rzm.versionV002.Photo photo = new com.example.sqlite.rzm.versionV002.Photo();
+            photo.setPath("data/data/my.jpg-----V002");
+            photoDaoV002.insert(photo);
+        }
+    }
+
+    public void update1to2(View view) {
+        updateManager.saveVersionInfo("V001", "V002");
+        updateManager.startUpdateDb(this);
+    }
+
+    public void update1to3(View view) {
+        updateManager.saveVersionInfo("V001", "V003");
+        updateManager.startUpdateDb(this);
+    }
+
+    public void update2to3(View view) {
+        updateManager.saveVersionInfo("V002", "V003");
+        updateManager.startUpdateDb(this);
     }
 
     /**
@@ -35,13 +98,13 @@ public class MainActivity extends AppCompatActivity {
      */
     public void login(View view) {
 
-        User user = new User();
+        /*User user = new User();
         user.setName("V00" + (i++));
         user.setPassword("123456");
         user.setName("张三" + i);
         user.setUser_id("N000" + i);
         baseDao.insert(user);
-        updateManager.checkThisVersionTable(this);
+        updateManager.checkThisVersionTable(this);*/
 //        Volley.sendRequest(null, url,NewsPager.class, new IDataListener<NewsPager>() {
 //            @Override
 //            public void onSuccess(NewsPager loginRespense) {
@@ -79,7 +142,7 @@ public class MainActivity extends AppCompatActivity {
          */
         updateManager.saveVersionInfo("V003", "V002");
         updateManager.checkThisVersionTable(this);
-
         updateManager.startUpdateDb(this);
     }
+
 }
