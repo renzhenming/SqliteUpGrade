@@ -1,5 +1,7 @@
 package com.example.sqlite.rzm.update;
 
+import android.database.sqlite.SQLiteDatabase;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -21,7 +23,7 @@ public class UpdateDbXml {
     public UpdateDbXml(Document document) {
         {
             // 获取到xml中所有updateStep节点组成的集合
-            NodeList updateSteps = document.getElementsByTagName("updateStep");
+            NodeList updateSteps = document.getElementsByTagName(SqlConstant.KEY_UPDATE_STEP);
             this.updateSteps = new ArrayList<UpdateStep>();
             for (int i = 0; i < updateSteps.getLength(); i++) {
                 //for循环遍历每一个updateStep节点，强转成Element对象
@@ -36,7 +38,7 @@ public class UpdateDbXml {
             /**
              * 获取各升级版本
              */
-            NodeList createVersions = document.getElementsByTagName("createVersion");
+            NodeList createVersions = document.getElementsByTagName(SqlConstant.KEY_CREATE_VERSION);
             this.createVersions = new ArrayList<CreateVersion>();
             for (int i = 0; i < createVersions.getLength(); i++) {
                 Element ele = (Element) (createVersions.item(i));

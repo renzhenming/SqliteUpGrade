@@ -24,14 +24,14 @@ public class UpdateDb {
 
     public UpdateDb(Element ele) {
         //获取name属性
-        dbName = ele.getAttribute("name");
+        dbName = ele.getAttribute(SqlConstant.KEY_DB_NAME);
 
         sqlBefores = new ArrayList<String>();
         sqlAfters = new ArrayList<String>();
 
         //这个元素中还包含有别的元素节点，使用同样的方式获取
         {
-            NodeList sqls = ele.getElementsByTagName("sql_before");
+            NodeList sqls = ele.getElementsByTagName(SqlConstant.KEY_SQL_BEFORE);
             for (int i = 0; i < sqls.getLength(); i++) {
                 //获取到这个节点中的文字内容
                 String sql_before = sqls.item(i).getTextContent();
@@ -41,7 +41,7 @@ public class UpdateDb {
         }
         //同上
         {
-            NodeList sqls = ele.getElementsByTagName("sql_after");
+            NodeList sqls = ele.getElementsByTagName(SqlConstant.KEY_SQL_AFTER);
             for (int i = 0; i < sqls.getLength(); i++) {
                 String sql_after = sqls.item(i).getTextContent();
                 this.sqlAfters.add(sql_after);

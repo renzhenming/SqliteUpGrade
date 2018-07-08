@@ -19,11 +19,11 @@ public class CreateVersion {
     private List<CreateDb> createDbs;
 
     public CreateVersion(Element ele) {
-        version = ele.getAttribute("version");
+        version = ele.getAttribute(SqlConstant.KEY_DB_VERSION);
 
         {
             createDbs = new ArrayList<CreateDb>();
-            NodeList cs = ele.getElementsByTagName("createDb");
+            NodeList cs = ele.getElementsByTagName(SqlConstant.KEY_CREATE_DB);
             for (int i = 0; i < cs.getLength(); i++) {
                 Element ci = (Element) (cs.item(i));
                 CreateDb cd = new CreateDb(ci);

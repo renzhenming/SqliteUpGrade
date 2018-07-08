@@ -27,13 +27,13 @@ public class UpdateStep {
 
     public UpdateStep(Element ele) {
         //就像findViewById一样获取这个节点的属性attribute
-        versionFrom = ele.getAttribute("versionFrom");
-        versionTo = ele.getAttribute("versionTo");
+        versionFrom = ele.getAttribute(SqlConstant.KEY_VERSION_FROM);
+        versionTo = ele.getAttribute(SqlConstant.KEY_VERSION_TO);
         updateDbs = new ArrayList<UpdateDb>();
 
         //updateDb是一个跟updateStep一样的元素Element，这里会获取
         // 到所有同类型的元素组成的集合
-        NodeList dbs = ele.getElementsByTagName("updateDb");
+        NodeList dbs = ele.getElementsByTagName(SqlConstant.KEY_UPDATE_DB);
         for (int i = 0; i < dbs.getLength(); i++) {
             //得到每一个updateDb元素封装成UpdateDb对象
             Element db = (Element) (dbs.item(i));

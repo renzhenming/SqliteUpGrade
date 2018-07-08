@@ -20,11 +20,11 @@ public class CreateDb {
     private List<String> sqlCreates;
 
     public CreateDb(Element ele) {
-        name = ele.getAttribute("name");
+        name = ele.getAttribute(SqlConstant.KEY_DB_NAME);
 
         {
             sqlCreates = new ArrayList<String>();
-            NodeList sqls = ele.getElementsByTagName("sql_createTable");
+            NodeList sqls = ele.getElementsByTagName(SqlConstant.KEY_SQL_CREATE_TABLE);
             for (int i = 0; i < sqls.getLength(); i++) {
                 String sqlCreate = sqls.item(i).getTextContent();
                 this.sqlCreates.add(sqlCreate);
