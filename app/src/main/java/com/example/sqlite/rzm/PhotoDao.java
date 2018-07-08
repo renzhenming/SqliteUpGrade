@@ -13,10 +13,6 @@ public class PhotoDao  extends BaseDao<Photo>{
 
     @Override
     public String createTable() {
-        return "create table if not exists tb_photo(\n" +
-                "                time TEXT,\n" +
-                "                path TEXT,\n" +
-                "                to_user TEXT\n" +
-                "                )";
+        return "create table if not exists tb_photo(time TEXT,path TEXT)";
     }
 }

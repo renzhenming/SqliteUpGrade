@@ -6,11 +6,8 @@ import android.content.pm.PackageManager;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Environment;
-import android.util.Log;
+import android.text.TextUtils;
 
-import com.example.sqlite.rzm.User;
-import com.example.sqlite.rzm.UserDao;
-import com.example.sqlite.rzm.db.BaseDaoFactory;
 import com.example.sqlite.rzm.fileutil.FileUtil;
 
 import org.w3c.dom.Document;
@@ -20,19 +17,33 @@ import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
-import static android.content.ContentValues.TAG;
-
 
 public class UpdateManager {
-    private static final String INFO_FILE_DIV = "/";
-    private List<User> userList;
-    private File parentFile = new File(Environment.getExternalStorageDirectory(), "update");
-    private File bakFile = new File(parentFile, "backDb");
+    /**
+     * 数据库存放的根目录 目前是内存卡下的一个目录ROOT_DB_DIR
+     */
+    private final String ROOT_DB_DIR = "update";
+    /**
+     * 数据库备份的目录ROOT_BACK_UP_DIR，存放于ROOT_DB_DIR中
+     */
+    private final String ROOT_BACK_UP_DIR = "backDb";
+    /**
+     * 版本更新的相关信息存放文件
+     */
+    private final String UPDATE_INFO = "update.txt";
+    /**
+     * 升级用的脚本文件
+     */
+    private final String UPDATE_SCRIPT_XML = "updateXml.xml";
+    private File parentFile = new File(Environment.getExternalStorageDirectory(), ROOT_DB_DIR);
+
+    private File bakFile = new File(parentFile, ROOT_BACK_UP_DIR);
 
     public UpdateManager() {
         if (!parentFile.exists()) {
@@ -45,10 +56,6 @@ public class UpdateManager {
     }
 
     public void checkThisVersionTable(Context context) {
-        UserDao userDao = BaseDaoFactory.getInstance().getDataHelper(UserDao.class, User.class);
-
-        userList = userDao.query(new User());
-
         //解析mxl文件，将解析到的信息封装到UpdateDbXml对象中
         UpdateDbXml xml = readDbXml(context);
         //获取当前版本信息
@@ -86,20 +93,9 @@ public class UpdateManager {
             List<UpdateDb> updateDbs = updateStep.getUpdateDbs();
             CreateVersion createVersion = analyseCreateVersion(updateDbxml, currentVersion);
 
-            //****************   把数据库都拷贝一份到backDb文件夹中  *********************
             try {
-                //更新每个用户的数据库
-                for (User user : userList) {
-                    String logicDbDir = parentFile.getAbsolutePath()/* + "/update" */+ "/" + user.getUser_id() + "/logic.db";
-
-                    String logicCopy = bakFile.getAbsolutePath() + "/" + user.getUser_id() + "/logic.db";
-                    FileUtil.CopySingleFile(logicDbDir, logicCopy);
-                }
-                //备份总数据库
-                String user = parentFile.getAbsolutePath() + "/user.db";
-                String user_bak = bakFile.getAbsolutePath() + "/user.db";
-                FileUtil.CopySingleFile(user, user_bak);
-
+                //****************   把数据库都拷贝一份到backDb文件夹中  *********************
+                backUpDb(updateDbs);
                 //****************   把数据库都拷贝一份到backDb文件夹中  *********************
 
                 //****************   将原有数据库重命名  *********************
@@ -114,25 +110,69 @@ public class UpdateManager {
                 executeDb(updateDbs, 1);
                 //****************   将重命名后的数据库中的数据插入新建的数据库表中，然后删除这个重命名后的数据库
             } catch (Exception e) {
-
+                e.printStackTrace();
+                //发生异常，做一些处理
             }
             //****************   删除备份数据库（备份数据库是为了防止升级过程中出现问题而设）  *********************
-            if (userList != null && !userList.isEmpty()) {
-                for (User user : userList) {
-                    String logicDbDir = parentFile.getAbsolutePath() + "/update" + "/" + user.getUser_id() + ".db";
-                    File file = new File(logicDbDir);
-                    if (file.exists()) {
-                        file.delete();
-                    }
-
-                }
-            }
-            File userFileBak = new File(bakFile.getAbsolutePath() + "user_bak.db");
-            if (userFileBak.exists()) {
-                userFileBak.delete();
-            }
+            deleteBackupDb(updateDbs);
             //****************   删除备份数据库  *********************
         }
+    }
+
+    /**
+     * 升级成功，删除备份
+     *
+     * @param updateDbs
+     */
+    private void deleteBackupDb(List<UpdateDb> updateDbs) {
+        List<String> dbNames = getUpdateDbNames(updateDbs);
+        if (dbNames.size() > 0) {
+            for (String dbName : dbNames) {
+                File userFileBak = new File(bakFile.getAbsolutePath() + File.separator + dbName + ".db");
+                if (userFileBak.exists()) {
+                    userFileBak.delete();
+                }
+            }
+        }
+
+    }
+
+    /**
+     * 备份原有数据库
+     *
+     * @param updateDbs 包含当前版本需要跟新的数据库信息，只需要将需要更新的数据库备份即可
+     */
+    private void backUpDb(List<UpdateDb> updateDbs) {
+
+        List<String> dbNames = getUpdateDbNames(updateDbs);
+        if (dbNames.size() > 0) {
+            for (String dbName : dbNames) {
+                String user = parentFile.getAbsolutePath() + File.separator + dbName + ".db";
+                String user_bak = bakFile.getAbsolutePath() + File.separator + dbName + ".db";
+                FileUtil.CopySingleFile(user, user_bak);
+            }
+        }
+    }
+
+    /**
+     * 获取到所有需要备份的数据库名称，存入集合返回，一般在未分库的情况下，只有一个结果
+     *
+     * @param updateDbs
+     * @return
+     */
+    private List<String> getUpdateDbNames(List<UpdateDb> updateDbs) {
+        ArrayList<String> dbNames = new ArrayList<>();
+        //获取所有需要备份的数据库名称并去除重复
+        if (updateDbs != null) {
+            for (UpdateDb updateDb : updateDbs) {
+                String dbName = updateDb.getDbName();
+                if (!TextUtils.isEmpty(dbName) && !dbNames.contains(dbName)) {
+                    dbNames.add(dbName);
+                }
+
+            }
+        }
+        return dbNames;
     }
 
     /**
@@ -150,34 +190,14 @@ public class UpdateManager {
             if (cd == null || cd.getName() == null) {
                 throw new Exception("check you updateXml.xml file to see if createDb node or name is null");
             }
-
-            if (!"logic".equals(cd.getName())) {
-                continue;
-            }
-
             // 创建数据库表sql
             List<String> sqls = cd.getSqlCreates();
 
             SQLiteDatabase sqlitedb = null;
-            try {
-                // 逻辑层数据库要做多用户升级
-                if (userList != null && !userList.isEmpty()) {
-                    // 多用户建新表
-                    for (int i = 0; i < userList.size(); i++) {
-                        // 获取db
-                        sqlitedb = getDb(cd, userList.get(i).getUser_id());
-                        executeSql(sqlitedb, sqls);
-                        sqlitedb.close();
-                    }
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            } finally {
-                // 关闭数据库
-                if (sqlitedb != null) {
-                    sqlitedb.close();
-                }
-            }
+
+            sqlitedb = getDb(cd.getName());
+            executeSql(sqlitedb, sqls);
+            sqlitedb.close();
         }
     }
 
@@ -210,25 +230,12 @@ public class UpdateManager {
 
             SQLiteDatabase sqlitedb = null;
 
-            try {
-                // 逻辑层数据库要做多用户升级
-                if (userList != null && !userList.isEmpty()) {
-                    // 多用户表升级
-                    for (int i = 0; i < userList.size(); i++) {
-                        sqlitedb = getDb(db, userList.get(i).getUser_id());
+            sqlitedb = getDb(db.getDbName());
 
-                        executeSql(sqlitedb, sqls);
+            executeSql(sqlitedb, sqls);
 
-                        sqlitedb.close();
-                    }
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            } finally {
-                if (null != sqlitedb) {
-                    sqlitedb.close();
-                }
-            }
+            sqlitedb.close();
+
         }
     }
 
@@ -255,7 +262,6 @@ public class UpdateManager {
             sql = sql.replaceAll("\n", " ");
             if (!"".equals(sql.trim())) {
                 try {
-                    // Logger.i(TAG, "执行sql：" + sql, false);
                     sqlitedb.execSQL(sql);
                 } catch (SQLException e) {
                 }
@@ -313,20 +319,6 @@ public class UpdateManager {
     }
 
     /**
-     * 根据xml对象获取对应要修改的db文件
-     *
-     * @param db
-     * @return
-     */
-    private SQLiteDatabase getDb(UpdateDb db, String userId) {
-        return getDb(db.getDbName(), userId);
-    }
-
-    private SQLiteDatabase getDb(CreateDb db, String userId) {
-        return getDb(db.getName(), userId);
-    }
-
-    /**
      * 创建数据库,获取数据库对应的SQLiteDatabase
      *
      * @param dbname
@@ -334,20 +326,13 @@ public class UpdateManager {
      * @throws throws [违例类型] [违例说明]sta
      * @see
      */
-    private SQLiteDatabase getDb(String dbname, String userId) {
+    private SQLiteDatabase getDb(String dbname) {
         String dbfilepath = null;
         SQLiteDatabase sqlitedb = null;
-        File file = new File(parentFile, userId);
-        if (!file.exists()) {
-            file.mkdirs();
+        if (!parentFile.exists()) {
+            parentFile.mkdirs();
         }
-        if (dbname.equalsIgnoreCase("logic")) {
-            dbfilepath = file.getAbsolutePath() + "/logic.db";// logic对应的数据库路径
-
-        } else if (dbname.equalsIgnoreCase("user")) {
-            dbfilepath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/user.db";// service对应的数据库
-        }
-
+        dbfilepath = parentFile.getAbsolutePath() + File.separator + dbname + ".db";// logic对应的数据库路径
         if (dbfilepath != null) {
             File f = new File(dbfilepath);
             f.mkdirs();
@@ -414,11 +399,12 @@ public class UpdateManager {
         InputStream is = null;
         Document document = null;
         try {
-            is = context.getAssets().open("updateXml.xml");
+            is = context.getAssets().open(UPDATE_SCRIPT_XML);
             DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
             document = builder.parse(is);
         } catch (Exception e) {
             e.printStackTrace();
+            throw new NullPointerException("read update script xml failed,check your asset dir to see if you have a script xml");
         } finally {
             if (is != null) {
                 try {
@@ -452,6 +438,7 @@ public class UpdateManager {
             versionName = info.versionName;
 
         } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
         }
 
         return versionName;
@@ -459,20 +446,20 @@ public class UpdateManager {
 
     /**
      * 这个方法是模拟一个情景，当前有一个新版本发布，此时运行于市场上的app通过版本更新
-     * 接口请求到了新版本信息，新版本版本号为V003,当前版本版本号为V002,通过这个方法将新旧版本
+     * 接口请求到了新版本信息，新版本版本号为V003,当前版本版本号为V002,通过这个方法将旧版本
      * 号写入到一个文件中做记录，这个信息可以传递出此次升级是从哪个版本升级到哪个版本
      *
      * @return 保存成功返回true，否则返回false
      * @throws throws [违例类型] [违例说明]
      * @see
      */
-    public boolean saveVersionInfo(String newVersion,String currentVersion) {
+    public boolean saveVersionInfo(String lastVersion) {
         boolean ret = false;
 
         FileWriter writer = null;
         try {
-            writer = new FileWriter(new File(parentFile, "update.txt"), false);
-            writer.write(newVersion + INFO_FILE_DIV +currentVersion);
+            writer = new FileWriter(new File(parentFile, UPDATE_INFO), false);
+            writer.write(lastVersion);
             writer.flush();
             ret = true;
         } catch (IOException e) {
@@ -490,39 +477,35 @@ public class UpdateManager {
     }
 
     /**
-     * 获取本地版本相关信息
+     * 获取本地版本相关信息,app升级之后需要保存升级之前的版本信息，从而
+     * 根据这个信息可以知道，当前app是从哪个本版升级过来的
      *
      * @return 获取数据成功返回true，否则返回false
      * @throws throws [违例类型] [违例说明]
      * @see
      */
-    private String currentVersion;
     private String lastVersion;
 
     private boolean getLocalVersionInfo() {
         boolean ret = false;
 
-        File file = new File(parentFile, "update.txt");
+        File file = new File(parentFile, UPDATE_INFO);
 
         if (file.exists()) {
-            int byteread = 0;
-            byte[] tempbytes = new byte[100];
+            int byteRead = 0;
+            byte[] tempBytes = new byte[100];
             StringBuilder stringBuilder = new StringBuilder();
             InputStream in = null;
             try {
                 in = new FileInputStream(file);
-                while ((byteread = in.read(tempbytes)) != -1) {
-                    stringBuilder.append(new String(tempbytes, 0, byteread));
+                while ((byteRead = in.read(tempBytes)) != -1) {
+                    stringBuilder.append(new String(tempBytes, 0, byteRead));
                 }
-                String[] infos = stringBuilder.toString().split(INFO_FILE_DIV);
-                if (infos.length == 2) {
-                    //currentVersion是当前版本，也就是升级后的版本
-                    currentVersion = infos[0];
-                    //lastVersion是当前版本升级之前的版本，当前版本是从这个版本升级过来的
-                    //这个信息是通过saveVersionInfo保存的
-                    lastVersion = infos[1];
-                    ret = true;
-                }
+                String infos = stringBuilder.toString();
+                //lastVersion是当前版本升级之前的版本，当前版本是从这个版本升级过来的
+                //这个信息是通过saveVersionInfo保存的
+                lastVersion = infos;
+                ret = true;
             } catch (Exception e) {
 
             } finally {

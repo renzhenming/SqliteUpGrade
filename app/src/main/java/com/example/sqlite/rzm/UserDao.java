@@ -11,7 +11,7 @@ import static android.content.ContentValues.TAG;
 public class UserDao extends BaseDao<User> {
     @Override
     public String createTable() {
-        return "create table if not exists tb_user( name TEXT, password TEXT, user_id Text,status Integer);";
+        return "create table if not exists tb_user( name TEXT, password TEXT, user_id Text);";
     }
 
     @Override
@@ -22,12 +22,10 @@ public class UserDao extends BaseDao<User> {
         {
             where =new User();
             where.setUser_id(user.getUser_id());
-            user.setStatus(0);
             Log.i(TAG,"用户"+user.getName()+"更改为未登录状态");
             update(user,where);
         }
         Log.i(TAG,"用户"+entity.getName()+"登录");
-        entity.setStatus(1);
         return super.insert(entity);
     }
 
@@ -42,7 +40,6 @@ public class UserDao extends BaseDao<User> {
      */
     public User getCurrentUser() {
         User user=new User();
-        user.setStatus(1);
         List<User> list=query(user);
         if(list.size()>0)
         {

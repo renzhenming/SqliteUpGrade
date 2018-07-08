@@ -11,8 +11,6 @@
                 lastLoginTime TEXT
                 );
             </sql_createTable>
-        </createDb>
-        <createDb name="logic">
             <sql_createTable>
                 create table if not exists tb_photo(
                 path TEXT,
@@ -35,8 +33,7 @@
                 lastExistTime TEXT
                 );
             </sql_createTable>
-        </createDb>
-        <createDb name="logic">
+
             <sql_createTable>
                 create table if not exists tb_photo(
                 path TEXT,
@@ -52,29 +49,27 @@
     <updateStep
         versionFrom="V001"
         versionTo="V003">
-        <updateDb name="logic">
-            <!--将原有表重命名-->
-            <sql_before>alter table tb_photo rename to bak_tb_photo;</sql_before>
-            <!--拷贝原有表中数据到新创建的表结构-->
-            <sql_after>
-                insert into tb_photo(path,time )
-                select path,time
-                from bak_tb_photo;
-            </sql_after>
-            <!--删除旧表-->
-            <sql_after>
-                drop table if exists bak_tb_photo;
-            </sql_after>
-        </updateDb>
         <updateDb name="user">
-            <sql_before>alter table tb_user rename to bak_t_user;</sql_before>
+            <sql_before>alter table tb_user rename to bak_tb_user;</sql_before>
             <sql_after>
                 insert into tb_user(user_id,name, password)
                 select user_id,name,password
                 from bak_tb_user;
             </sql_after>
             <sql_after>
-                drop table if exists bak_t_user;
+                drop table if exists bak_tb_user;
+            </sql_after>
+        </updateDb>
+
+        <updateDb name="user">
+            <sql_before>alter table tb_photo rename to bak_tb_photo;</sql_before>
+            <sql_after>
+                insert into tb_photo(path,time)
+                select path,time
+                from bak_tb_photo;
+            </sql_after>
+            <sql_after>
+                drop table if exists bak_tb_photo;
             </sql_after>
         </updateDb>
     </updateStep>
@@ -82,29 +77,27 @@
     <updateStep
         versionFrom="V001"
         versionTo="V002">
-        <updateDb name="logic">
-            <!--将原有表重命名-->
-            <sql_before>alter table tb_photo rename to bak_tb_photo;</sql_before>
-            <!--拷贝原有表中数据到新创建的表结构-->
-            <sql_after>
-                insert into tb_photo(path,time )
-                select path,time
-                from bak_tb_photo;
-            </sql_after>
-            <!--删除旧表-->
-            <sql_after>
-                drop table if exists bak_tb_photo;
-            </sql_after>
-        </updateDb>
         <updateDb name="user">
-            <sql_before>alter table tb_user rename to bak_t_user;</sql_before>
+            <sql_before>alter table tb_user rename to bak_tb_user;</sql_before>
             <sql_after>
                 insert into tb_user(user_id,name, password)
                 select user_id,name,password
                 from bak_tb_user;
             </sql_after>
             <sql_after>
-                drop table if exists bak_t_user;
+                drop table if exists bak_tb_user;
+            </sql_after>
+        </updateDb>
+
+        <updateDb name="user">
+            <sql_before>alter table tb_photo rename to bak_tb_photo;</sql_before>
+            <sql_after>
+                insert into tb_photo(path,time)
+                select path,time
+                from bak_tb_photo;
+            </sql_after>
+            <sql_after>
+                drop table if exists bak_tb_photo;
             </sql_after>
         </updateDb>
     </updateStep>
@@ -112,30 +105,29 @@
     <updateStep
         versionFrom="V002"
         versionTo="V003">
-        <updateDb name="logic">
-            <!--将原有表重命名-->
-            <sql_before>alter table tb_photo rename to bak_tb_photo;</sql_before>
-            <!--拷贝原有表中数据到新创建的表结构-->
-            <sql_after>
-                insert into tb_photo(path,time, sendTime)
-                select path,time, sendTime
-                from bak_tb_photo;
-            </sql_after>
-            <!--删除旧表-->
-            <sql_after>
-                drop table if exists bak_tb_photo;
-            </sql_after>
-        </updateDb>
         <updateDb name="user">
-            <sql_before>alter table tb_user rename to bak_t_user;</sql_before>
+            <sql_before>alter table tb_user rename to bak_tb_user;</sql_before>
             <sql_after>
                 insert into tb_user(user_id,name, password,lastLoginTime)
                 select user_id,name, password,lastLoginTime
                 from bak_tb_user;
             </sql_after>
             <sql_after>
-                drop table if exists bak_t_user;
+                drop table if exists bak_tb_user;
             </sql_after>
         </updateDb>
+
+        <updateDb name="user">
+            <sql_before>alter table tb_photo rename to bak_tb_photo;</sql_before>
+            <sql_after>
+                insert into tb_photo(path,time,sendTime)
+                select path,time,sendTime
+                from bak_tb_photo;
+            </sql_after>
+            <sql_after>
+                drop table if exists bak_tb_photo;
+            </sql_after>
+        </updateDb>
+
     </updateStep>
 </updateXml>
